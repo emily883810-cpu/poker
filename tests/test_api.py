@@ -26,7 +26,7 @@ class APITest(unittest.TestCase):
         cls.temp.cleanup()
 
     def request(self, path, body=None, method=None):
-        req = Request(self.url + '/api' + path, data=json.dumps(body).encode() if body else None, method=method)
+        req = Request(self.url + '/api' + path, data=json.dumps(body).encode() if body else None, method=method, headers={'Content-Type': 'application/json'} if body else {})
         with urlopen(req) as r:
             return json.load(r)
 

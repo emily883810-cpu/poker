@@ -7,7 +7,8 @@ ROOT = Path(__file__).resolve().parents[1]
 TOP_LEVEL = [
     '.gitignore', 'README.md', 'Start-Poker-OS.cmd', 'start-windows.ps1',
     'windows_bootstrap.py', 'requirements.txt', 'package.json', 'package-lock.json',
-    'index.html', 'vite.config.js', 'playwright.config.js',
+    'index.html', 'vite.config.js', 'playwright.config.js', 'playwright.web.config.js',
+    'DEPLOY.md', 'Dockerfile', '.dockerignore', 'render.yaml',
 ]
 FOLDERS = ['dist', 'server', 'src', 'tests', 'examples', 'public', 'scripts']
 GUIDE = '''Poker OS v0.1.1 - Windows 開啟方法

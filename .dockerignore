@@ -1,0 +1,13 @@
+.git
+.venv
+node_modules
+data
+downloads
+*.zip
+__pycache__
+*.pyc
+*.log
+.env
+.env.*
+
+*.env

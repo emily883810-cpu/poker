@@ -1,0 +1,18 @@
+# This is a paid persistent-disk configuration. Review Render's pricing before deploying.
+services:
+  - type: web
+    name: poker-os-private
+    runtime: docker
+    plan: starter
+    healthCheckPath: /api/health
+    disk:
+      name: poker-os-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: POKER_PUBLIC
+        value: "1"
+      - key: POKER_DB
+        value: /var/data/poker.sqlite3
+      - key: POKER_PASSWORD
+        generateValue: true

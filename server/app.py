@@ -1,4 +1,4 @@
-"""Loopback-only private study API. No external requests or decision engine."""
+"""Private offline-review application: local mode or password-protected web mode."""
 import base64
 import hashlib
 import io
@@ -9,6 +9,7 @@ from pathlib import Path
 import re
 import sqlite3
 from .validation import validate_hand
+from . import auth
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs, unquote
 
@@ -22,6 +23,7 @@ def connect():
     con = sqlite3.connect(DB)
     con.row_factory = sqlite3.Row
     con.executescript('''CREATE TABLE IF NOT EXISTS hands(id TEXT PRIMARY KEY, title TEXT NOT NULL, payload TEXT NOT NULL, created TEXT DEFAULT CURRENT_TIMESTAMP);
+    CREATE TABLE IF NOT EXISTS sessions(token TEXT PRIMARY KEY, credential TEXT NOT NULL, expires REAL NOT NULL);
     CREATE TABLE IF NOT EXISTS documents(id TEXT PRIMARY KEY, name TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS passages(doc TEXT, number INTEGER, page INTEGER, text TEXT NOT NULL, FOREIGN KEY(doc) REFERENCES documents(id));''')
     return con
@@ -53,19 +55,41 @@ def import_document(name, content):
 
 
 class Handler(BaseHTTPRequestHandler):
-    def respond(self, code, data):
+    def respond(self, code, data, cookie=None):
         body = json.dumps(data, ensure_ascii=False).encode()
         self.send_response(code)
         self.send_header('Content-Type', 'application/json; charset=utf-8')
         self.send_header('Content-Length', str(len(body)))
         self.send_header('X-Content-Type-Options', 'nosniff')
+        self.send_header('Cache-Control', 'no-store')
+        self.send_header('Referrer-Policy', 'same-origin')
+        if cookie:
+            self.send_header('Set-Cookie', cookie)
         self.end_headers()
         self.wfile.write(body)
 
     def allowed_host(self):
         host = self.headers.get('Host', '').split(':')[0]
-        if host not in ('127.0.0.1', 'localhost'):
-            self.respond(403, {'error': 'Loopback host required'})
+        allowed = {'127.0.0.1', 'localhost'}
+        if auth.public_mode():
+            allowed.update(x.strip().lower() for x in os.environ.get('POKER_ALLOWED_HOSTS', '').split(',') if x.strip())
+            allowed.update(os.environ.get(k, '').lower() for k in ('RENDER_EXTERNAL_HOSTNAME', 'RENDER_INTERNAL_HOSTNAME'))
+        if host.lower() not in allowed:
+            self.respond(403, {'error': 'Host not allowed'})
+            return False
+        return True
+
+    def authorized(self):
+        with connect() as con:
+            ok = auth.authenticated(self.headers, con)
+        if not ok:
+            self.respond(401, {'error': '請先登入私人工作台'})
+        return ok
+
+    def valid_origin(self):
+        origin = self.headers.get('Origin')
+        if self.headers.get('Sec-Fetch-Site') == 'cross-site' or (origin and urlparse(origin).netloc.lower() != self.headers.get('Host', '').lower()):
+            self.respond(403, {'error': 'Cross-site request rejected'})
             return False
         return True
 
@@ -74,9 +98,14 @@ class Handler(BaseHTTPRequestHandler):
             return
         path = urlparse(self.path)
         q = parse_qs(path.query).get('q', [''])[0].strip().casefold()
+        if path.path == '/api/health':
+            return self.respond(200, {'status': 'ok', 'mode': 'offline-review'})
+        if path.path == '/api/session':
+            with connect() as con:
+                return self.respond(200, {'required': auth.required(), 'authenticated': auth.authenticated(self.headers, con)})
+        if path.path.startswith('/api/') and not self.authorized():
+            return
         with connect() as con:
-            if path.path == '/api/health':
-                return self.respond(200, {'status': 'ok', 'mode': 'offline-review'})
             if path.path == '/api/hands':
                 rows = [json.loads(r['payload']) for r in con.execute('SELECT payload FROM hands ORDER BY created DESC, rowid DESC')]
                 return self.respond(200, [h for h in rows if q in json.dumps(h, ensure_ascii=False).casefold()])
@@ -101,20 +130,38 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header('Content-Length', str(len(body)))
         self.send_header('X-Content-Type-Options', 'nosniff')
         self.send_header('Cache-Control', 'no-cache')
+        self.send_header('Referrer-Policy', 'same-origin')
+        self.send_header('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'")
         self.end_headers()
         self.wfile.write(body)
 
     def do_POST(self):
         if not self.allowed_host():
             return
-        # Browser requests must pass the same-origin Vite proxy. No CORS, no remote binding.
-        if self.headers.get('Sec-Fetch-Site') == 'cross-site':
-            return self.respond(403, {'error': 'Cross-site request rejected'})
+        if not self.valid_origin():
+            return
+        if self.path == '/api/logout':
+            with connect() as con:
+                con.execute('DELETE FROM sessions WHERE token=?', (auth.token_hash(auth.read_token(self.headers)),))
+            return self.respond(200, {'ok': True}, auth.cookie_header(clear=True))
+        if self.path != '/api/login' and not self.authorized():
+            return
+        if self.headers.get_content_type() != 'application/json':
+            return self.respond(415, {'error': 'JSON required'})
         try:
             length = int(self.headers.get('Content-Length', 0))
-            if not 0 < length <= 12_000_000:
+            limit = 4096 if self.path == '/api/login' else 12_000_000
+            if not 0 < length <= limit:
                 return self.respond(413, {'error': 'Request size limit'})
             data = json.loads(self.rfile.read(length))
+            if not isinstance(data, dict):
+                raise ValueError('JSON object required')
+            if self.path == '/api/login':
+                with connect() as con:
+                    code, token = auth.login(data.get('password'), con)
+                if code != 200:
+                    return self.respond(code, {'error': '嘗試次數過多，請稍後一分鐘再試' if code == 429 else '密碼不正確'})
+                return self.respond(200, {'authenticated': True}, auth.cookie_header(token))
             if self.path == '/api/hands':
                 validate_hand(data)
                 key = str(data.get('id', ''))[:100]
@@ -134,8 +181,8 @@ class Handler(BaseHTTPRequestHandler):
     def do_DELETE(self):
         if not self.allowed_host():
             return
-        if self.headers.get('Sec-Fetch-Site') == 'cross-site':
-            return self.respond(403, {'error': 'Cross-site request rejected'})
+        if not self.valid_origin() or not self.authorized():
+            return
         parts = urlparse(self.path).path.split('/')
         if len(parts) != 4 or parts[2] not in ('hands', 'documents'):
             return self.respond(404, {'error': 'Not found'})
@@ -150,6 +197,8 @@ class Handler(BaseHTTPRequestHandler):
 
 if __name__ == '__main__':
     connect().close()
-    port = int(os.environ.get('POKER_PORT', '8000'))
-    print(f'Poker OS private API: 127.0.0.1:{port}', flush=True)
-    ThreadingHTTPServer(('127.0.0.1', port), Handler).serve_forever()
+    port = int(os.environ.get('POKER_PORT', os.environ.get('PORT', '8000')))
+    bind = '0.0.0.0' if auth.public_mode() else '127.0.0.1'
+    auth.validate_startup(bind)
+    print(f'Poker OS private review: {bind}:{port}', flush=True)
+    ThreadingHTTPServer((bind, port), Handler).serve_forever()
