@@ -46,9 +46,9 @@ npm run dev
 
 ## MVP 操作
 
-- **Replayer**：6-max / 9-max；逐動作播放、暫停、速度、滑桿、街道與 timeline 跳轉，公共牌逐街揭示。顯示座號、位置、Button、已知底牌、剩餘 Stack、Pot、當街投入和 SPR。勾選顯示底牌只揭露紀錄已有的牌，未知牌不猜測。
+- **Replayer**：完整 6-max / 9-max 座位（未記錄座位亦有示意）；下注推出、換街收籌碼、當街累計及本次投入分開顯示。逐動作播放、暫停、速度、滑桿、街道與 timeline 跳轉，公共牌逐街揭示。顯示座號、位置、Button、已知底牌、剩餘 Stack、Pot、當街投入和 SPR。勾選顯示底牌只揭露紀錄已有的牌，未知底牌不猜測；記有 rainbow 的未知 Flop 花色可用有標示的示意配色觀看，原始資料不變。
 - **Import hand**：上傳或貼上英文 PokerStars / Zoom、相容英文 GGPoker HH，或 Poker OS JSON。確認已完成且有權使用後驗證保存。同 ID 更新，不會重複入庫。批次匯入先全部解析，解析失敗不寫入；若 API 寫入中途失敗，先前成功的手牌仍會保留，可用相同 ID 重試。
-- **New live hand**：選擇 Macau Live / WePoker 等平台、幣別 HKD/RMB/USD/EUR、盲注、桌型與 Button。填入座位、起始 Stack、位置、已知兩張底牌、公共牌，再依序新增動作。最後填實際派彩 `collect`，確認已完成後保存。支援 2 至 6 / 9 名實際入座玩家；手機 9-max 牌桌可局部橫向捲動。
+- **New live hand**：選擇 Macau Live / WePoker 等平台、幣別 HKD/RMB/USD/EUR、盲注、桌型與 Button。填入座位、起始 Stack、位置、已知兩張底牌、公共牌，再依序新增動作。最後填實際派彩 `collect`，確認已完成後保存。支援 2 至 6 / 9 名實際入座玩家；手機 9-max 牌桌可完整顯示全部位置，無需橫向捲動。
 - **Hand library**：SQLite 持久保存，可依平台、標題、玩家、ID、盲注、標籤、筆記搜尋；例如 `B-X-B`、`B-B-X`、`3BP OOP R`。標籤是使用者分類，不會冒充自動策略判斷。支援刪除、單手 JSON 或全部匯出，再用 Import 恢復手牌。
 - **Study library**：只匯入你有權私人使用的 ChakPoker 或其他教材，支援 UTF-8 TXT、Markdown、文字型 PDF（單檔 8 MB）。空白行切段，PDF 另保留頁碼；結果顯示檔名、段落序號、頁碼及教材原文。同檔名同內容重匯不重複。多個關鍵字以空格分隔，全部匹配；不是向量／語意搜尋。掃描 PDF 需要先自行 OCR，沒有可提取文字會明確拒絕。
 
@@ -94,7 +94,7 @@ npm run test:e2e
 POKER_CHROMIUM=/usr/bin/chromium npm run test:e2e
 ```
 
-E2E 使用 API 8010 / Vite 5174，獨立 `/tmp/poker-os-e2e.sqlite3`，不會修改開發資料庫。測試會清空**該測試庫**的資料。涵蓋保存與重新載入、標籤搜尋、教材匯入與來源、手動 Live Hand、9-max 匯入、手機捲動。Python 測試使用臨時 SQLite，測試結束清除。
+E2E 使用 API 8010 / Vite 5174，獨立 `/tmp/poker-os-e2e.sqlite3`，不會修改開發資料庫。測試會清空**該測試庫**的資料。涵蓋保存與重新載入、標籤搜尋、教材匯入與來源、手動 Live Hand、9-max 匯入、手機完整座位。Python 測試使用臨時 SQLite，測試結束清除。
 
 建置後 Python API 可直接提供 `dist/` 網頁與 `/api`，Windows 雙擊版即採用此模式；開發模式仍使用 `npm run dev`。不要單獨雙擊 HTML。可設定 `POKER_PORT` 改 API 監聽埠、`POKER_API_PORT` 改 Vite proxy 目標，兩者需一致。
 
@@ -102,7 +102,9 @@ E2E 使用 API 8010 / Vite 5174，獨立 `/tmp/poker-os-e2e.sqlite3`，不會修
 
 ```text
 src/poker.js             標準資料驗證、重播帳目、HH 解析
-src/Replayer.jsx         牌桌、播放、timeline、筆記與標籤
+src/Replayer.jsx         播放、timeline、筆記與標籤
+src/PokerTable.jsx       完整座位、籌碼動畫、下注及牌面顯示
+src/replayVisuals.js     座位、動畫移動、底池拆分及示意花色（不更改原手牌）
 src/HandEditor.jsx       Live 手動輸入
 src/StudyLibrary.jsx     教材索引與附來源搜尋
 src/App.jsx              工作台與手牌庫

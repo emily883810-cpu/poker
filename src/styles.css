@@ -5,7 +5,7 @@
 
 @media(min-width:901px){.inspector{padding:15px}.inspector h2{font-size:14px;margin-bottom:12px}.inspector .stats>div{margin-bottom:10px}.inspector .hint{font-size:10px;margin-bottom:8px}.inspector dl{margin:12px 0 0;padding-top:12px;gap:9px}.inspector .section-line{margin-top:14px;padding-top:13px}.inspector .field-label{margin-top:10px}.inspector .field-label textarea{margin-top:6px}.inspector .analysis-note{margin-top:12px;padding:9px}.inspector .full{min-height:32px;padding:7px 8px}.inspector .subtle{margin-top:3px}.inspector .tags{margin-bottom:8px}}
 
-.table-scroll{overflow-x:auto;overflow-y:hidden}.table-stage{margin:0 6px}.table-scroll:has(.seats-9):before{content:"9-max · 窄螢幕可橫向捲動牌桌";display:block;font-size:10px;color:#7e9290;padding:5px 8px}@media(max-width:600px){.seats-9{min-width:610px;height:450px!important}.seats-9 .felt{inset:60px 8% 65px}.seats-9 .seat{width:100px}.seats-9 .seat-body b{max-width:45px}}
+.table-scroll{overflow-x:auto;overflow-y:hidden}.table-stage{margin:0 6px}
 .searchbar button{flex-shrink:0;white-space:nowrap}.searchbar input{flex:1;min-width:0}.table-scroll{scrollbar-color:#4d6155 #131b18;scrollbar-width:thin}
 @media(min-width:901px){.inspector .stats{padding-top:11px}.inspector .stats>div{margin-bottom:9px}.inspector .hint{margin:5px 0 9px}.inspector .analysis-note{padding:8px;margin-top:8px}.inspector .analysis-note p{font-size:10px;line-height:1.55}.inspector .section-line{margin-top:12px;padding-top:12px}.inspector .field-label textarea{min-height:48px;height:48px}.inspector h2{margin-bottom:10px}.inspector .subtle{min-height:25px;padding:4px}}
 
