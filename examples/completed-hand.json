@@ -1,0 +1,168 @@
+{
+  "id": "demo-zoom-001",
+  "title": "QQ · Turn pot control",
+  "site": "PokerStars",
+  "stakes": "NL50 Zoom · 0.25 / 0.50",
+  "currency": "USD",
+  "maxSeats": 6,
+  "dealer": 6,
+  "completed": true,
+  "tags": [
+    "B-X-B",
+    "3BP OOP R"
+  ],
+  "notes": "示範手牌，不是真實玩家紀錄。",
+  "players": [
+    {
+      "seat": 1,
+      "name": "Northstar",
+      "position": "SB",
+      "stack": 50
+    },
+    {
+      "seat": 2,
+      "name": "Hero",
+      "position": "BB",
+      "stack": 56.5,
+      "cards": [
+        "Qs",
+        "Qh"
+      ]
+    },
+    {
+      "seat": 3,
+      "name": "QuietRiver",
+      "position": "UTG",
+      "stack": 48.25
+    },
+    {
+      "seat": 4,
+      "name": "StackTheory",
+      "position": "HJ",
+      "stack": 62.1
+    },
+    {
+      "seat": 5,
+      "name": "BlueHour",
+      "position": "CO",
+      "stack": 50
+    },
+    {
+      "seat": 6,
+      "name": "RiverPilot",
+      "position": "BTN",
+      "stack": 54.75
+    }
+  ],
+  "board": [
+    "As",
+    "9h",
+    "6c",
+    "2d",
+    "Qc"
+  ],
+  "actions": [
+    {
+      "street": "Preflop",
+      "player": "Northstar",
+      "type": "post",
+      "amount": 0.25
+    },
+    {
+      "street": "Preflop",
+      "player": "Hero",
+      "type": "post",
+      "amount": 0.5
+    },
+    {
+      "street": "Preflop",
+      "player": "QuietRiver",
+      "type": "fold",
+      "amount": 0
+    },
+    {
+      "street": "Preflop",
+      "player": "StackTheory",
+      "type": "fold",
+      "amount": 0
+    },
+    {
+      "street": "Preflop",
+      "player": "BlueHour",
+      "type": "fold",
+      "amount": 0
+    },
+    {
+      "street": "Preflop",
+      "player": "RiverPilot",
+      "type": "raise",
+      "amount": 1.25
+    },
+    {
+      "street": "Preflop",
+      "player": "Northstar",
+      "type": "fold",
+      "amount": 0
+    },
+    {
+      "street": "Preflop",
+      "player": "Hero",
+      "type": "raise",
+      "amount": 4.5
+    },
+    {
+      "street": "Preflop",
+      "player": "RiverPilot",
+      "type": "call",
+      "amount": 3.75
+    },
+    {
+      "street": "Flop",
+      "player": "Hero",
+      "type": "bet",
+      "amount": 3.25
+    },
+    {
+      "street": "Flop",
+      "player": "RiverPilot",
+      "type": "call",
+      "amount": 3.25
+    },
+    {
+      "street": "Turn",
+      "player": "Hero",
+      "type": "check",
+      "amount": 0
+    },
+    {
+      "street": "Turn",
+      "player": "RiverPilot",
+      "type": "check",
+      "amount": 0
+    },
+    {
+      "street": "River",
+      "player": "Hero",
+      "type": "bet",
+      "amount": 12
+    },
+    {
+      "street": "River",
+      "player": "RiverPilot",
+      "type": "fold",
+      "amount": 0
+    },
+    {
+      "street": "River",
+      "player": "Hero",
+      "type": "return",
+      "amount": 12
+    },
+    {
+      "street": "River",
+      "player": "Hero",
+      "type": "collect",
+      "amount": 16.75
+    }
+  ]
+}
