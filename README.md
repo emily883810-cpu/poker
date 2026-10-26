@@ -11,7 +11,7 @@
 3. 首次檢查 Python；如未安裝，使用 Windows Package Manager 安裝官方 Python 3.12，並安裝 PDF 套件。需要網路；若電腦出現安裝權限提示，請檢視後自行決定是否允許。
 4. 等待瀏覽器自動開啟本機 Poker OS。使用期間保留黑色視窗，結束時在該視窗按 Ctrl+C。
 
-支援有 Windows Package Manager 的 Windows 10/11。若無 winget，會開啟 Python 官網，需先安裝 Python 3.12+ 後再雙擊。防毒軟體／公司政策阻擋時，不要停用保護，保留錯誤訊息再處理。此啟動器在 Linux 環境完成靜態檢查，尚未在真正 Windows 電腦執行驗證；打包網頁及 Python 同源服務已在 Chromium 實測。
+支援有 Windows Package Manager 的 Windows 10/11。若無 winget，會開啟 Python 官網，需先安裝 Python 3.12+ 後再雙擊。防毒軟體／公司政策阻擋時，不要停用保護，保留錯誤訊息再處理。v0.1.1 啟動器將 Python 檢查移至 `windows_bootstrap.py`，避免 Windows PowerShell 5.1 的原生引號處理問題。已在 Linux PowerShell 的 Legacy 與 Standard 模式驗證套件探測、有空格路徑、stderr 警告及非零退出碼；另有中文路徑 Python 測試。尚未在真正 Windows 電腦執行驗證；打包網頁及 Python 同源服務已在 Chromium 實測。
 
 資料存在解壓資料夾內的 `data`，更新程式前先備份。相同埠已有 Poker OS 時會開啟原本執行中的工作區；要開另一份解壓資料夾，請先關閉上一份服務。ZIP 不含任何私人手牌或教材。原始碼版開發與測試仍依照下列流程。
 
@@ -106,3 +106,5 @@ server/app.py            本機 API、SQLite、教材提取
 server/validation.py     寫入邊界檢核
 examples/                可匯入的完整 JSON
 ```
+
+Windows 打包維護：先執行 `npm run build`，再執行 `.venv/bin/python scripts/package_windows.py`（Windows 開發者可用 `.venv\Scripts\python.exe scripts\package_windows.py`）。壓縮檔必須包含 `windows_bootstrap.py`；腳本會檢查必要檔案及排除私人資料。PowerShell 探測回歸測試可用 `pwsh -NoProfile -File tests/windows-launcher.Tests.ps1 -PythonPath /path/to/venv/python` 執行；它不會安裝系統工具或啟動應用程式。
