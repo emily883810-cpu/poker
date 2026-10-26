@@ -18,6 +18,7 @@ def validate_hand(h):
     for field in ('title', 'site', 'stakes', 'currency'):
         require(isinstance(h.get(field), str) and len(h[field]) <= 500, field + ' 格式錯誤')
     require(h.get('maxSeats') in (6, 9), '只支援 6-max / 9-max')
+    require('recordedOnly' not in h or type(h['recordedOnly']) is bool, '手記投入標示格式錯誤')
     require(type(h.get('dealer')) is int and 1 <= h['dealer'] <= h['maxSeats'], 'Button 座號不正確')
     ps, actions, board = h.get('players'), h.get('actions'), h.get('board')
     require(isinstance(ps, list) and 2 <= len(ps) <= h['maxSeats'], '座位數錯誤')

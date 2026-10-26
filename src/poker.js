@@ -25,6 +25,7 @@ export function validateHand(h) {
   if(cards.some(c=>typeof c!=='string'||!cardRE.test(c)) || new Set(cards.filter(c=>c[1]!=='?')).size!==cards.filter(c=>c[1]!=='?').length || [...new Set(cards.map(c=>c[0]))].some(r=>cards.filter(c=>c[0]===r).length>4)) throw Error('牌面格式錯誤或有重複牌（例如 As、Th）。');
   if(h.boardNote!==undefined&&typeof h.boardNote!=='string') throw Error('牌面說明必須為文字。');
   if(h.potType!==undefined&&typeof h.potType!=='string') throw Error('底池類型必須為文字。');
+  if(h.recordedOnly!==undefined&&typeof h.recordedOnly!=='boolean') throw Error('手記投入標示格式不正確。');
   if(h.reviewWarnings!==undefined&&(!Array.isArray(h.reviewWarnings)||h.reviewWarnings.length>30||h.reviewWarnings.some(x=>typeof x!=='string'))) throw Error('重建說明格式不正確。');
   if(!Array.isArray(h.actions)||(!h.actions.length||h.actions.length>1000)) throw Error('動作數必須在 1–1000 之間。');
   let st=0;

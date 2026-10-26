@@ -1,11 +1,30 @@
 import {useState} from 'react';
-import {FileText,ArrowRight} from 'lucide-react';
+import {ArrowRight} from 'lucide-react';
 import {Modal} from './HandEditor';
-import {convertMarkedNotes,notesExample,markedExample} from './notes.js';
-import {money} from './poker.js';
+import {markedExample} from './notes.js';
+import {convertQuickNotes,quickExample} from './quickNotes.js';
+
 export default function NotesImport({onClose,onReview}){
- const [text,setText]=useState(''),[currency,setCurrency]=useState(''),[maxSeats,setMax]=useState(''),[raiseMode,setRaiseMode]=useState('to'),[result,setResult]=useState(null),[confirmed,setConfirmed]=useState(false);
- const changed=fn=>e=>{fn(e.target.value);setResult(null);setConfirmed(false)};
- function parse(){setConfirmed(false);setResult(convertMarkedNotes(text,{currency,maxSeats:Number(maxSeats),raiseMode}))}
- return <Modal title="文字手記 → 可視化重播" onClose={onClose}><p>貼上你 mark 嘅已完成 hand。只做格式轉換及帳目重建，不會產生策略或 Solver 答案。</p><div className="notes-examples"><button onClick={()=>{setText(markedExample);setResult(null)}}>載入縮寫範例（虛構）</button><button onClick={()=>{setText(notesExample);setResult(null)}}>查看通用格式</button></div><textarea className="raw-input notes-input" aria-label="文字手記" placeholder={markedExample} rows="11" value={text} onChange={changed(setText)}/><div className="form-grid notes-settings"><label>未記幣別時使用<select aria-label="手記幣別" value={currency} onChange={changed(setCurrency)}><option value="">請選擇（不會猜測）</option>{['HKD','RMB','USD','EUR','BB'].map(x=><option key={x}>{x}</option>)}</select></label><label>未記桌型時使用<select aria-label="手記桌型" value={maxSeats} onChange={changed(setMax)}><option value="">請選擇</option><option value="6">6-max</option><option value="9">9-max</option></select></label><label>通用格式 R 金額<select aria-label="加注金額解讀" value={raiseMode} onChange={changed(setRaiseMode)}><option value="to">Raise to（加注至總額）</option><option value="increment">本次額外投入</option></select></label></div><p className="hint">支援 c / x / f / b / r / jam（縮寫範例）、k 金額（縮寫範例）、PF/F/T/R。JJ、AKs、277r 可保留未知花色；? 不代表某一實際花色。自由文字目前只支援已列出的結構，不是通用 AI 解讀。</p><button className="primary full" disabled={!text.trim()||text.length>20000} onClick={parse}><FileText size={16}/> 讀取文字並列出核對事項</button>{result?.issues.length>0&&<div className="error" role="alert"><b>仲有資料要核對</b><ul>{result.issues.map((s,i)=><li key={i}>{s}</li>)}</ul></div>}{result?.hand&&<section className="notes-preview"><h3>已讀取 · {result.hand.maxSeats}-max / {result.hand.currency}</h3><p>{result.hand.potType||`${result.hand.players.length} 名記錄玩家`} · {result.hand.actions.length} 個動作／發牌事件</p><div className="reconstruction-notice"><b>請逐項核對</b><ul>{result.derived.map((s,i)=><li key={i}>{s}</li>)}</ul></div><div className="table-overflow"><table><thead><tr><th>玩家</th><th>位置</th><th>起始 Stack</th><th>底牌</th></tr></thead><tbody>{result.hand.players.map(p=><tr key={p.name}><td>{p.name}</td><td>{p.position}</td><td>{p.stackKnown===false?'≥ ':''}{money(p.stack)}{p.stackKnown===false?'（僅下限）':''}</td><td>{p.cards.join(' ')}<small>{p.cardsNote}</small></td></tr>)}</tbody></table></div><label className="checkbox"><input type="checkbox" checked={confirmed} onChange={e=>setConfirmed(e.target.checked)}/> 我確認此手牌已完成，已核對重建假設；未記資料會保留為未知，唔當成精確紀錄</label><button className="primary full" disabled={!confirmed} onClick={()=>onReview(result.hand)}>開啟重播核對 <ArrowRight size={16}/></button><p className="hint">開啟重播不會自動保存；你可再修改手牌，確認後保存或分享畀 coach。</p></section>}</Modal>
+ const [text,setText]=useState(''),[currency,setCurrency]=useState(''),[maxSeats,setMax]=useState(''),[raiseMode,setRaiseMode]=useState('to'),[issue,setIssue]=useState('');
+ function parse(){
+  const result=convertQuickNotes(text,{currency,maxSeats:Number(maxSeats)||undefined,raiseMode});
+  if(result.hand)onReview(result.hand);else setIssue(result.issues[0]);
+ }
+ return <Modal title="貼上手記，即刻重播" onClose={onClose}>
+  <p>照平時 mark hand 咁貼就得，唔使先整理成表格。</p>
+  <textarea className="raw-input notes-input" aria-label="文字手記" placeholder={quickExample} rows="10" value={text} onChange={e=>{setText(e.target.value);setIssue('')}}/>
+  <p className="hint">無寫花色／Stack 會保留未知；無寫幣別就顯示籌碼。未記下注唔會自動補上，重建假設會標示。</p>
+  {issue&&<div className="error" role="alert">{issue}</div>}
+  <button className="primary full notes-submit" disabled={!text.trim()||text.length>20000} onClick={parse}>轉成重播 <ArrowRight size={16}/></button>
+  <p className="hint">只貼已完成嘅 hand。按上面即開預覽，未會保存或分享。</p>
+  <details className="notes-optional"><summary>選填設定／睇範例</summary>
+   <div className="form-grid notes-settings">
+    <label>手記無寫幣別時<select aria-label="手記幣別" value={currency} onChange={e=>{setCurrency(e.target.value);setIssue('')}}><option value="">籌碼（唔換算）</option>{['HKD','RMB','USD','EUR','BB'].map(x=><option key={x}>{x}</option>)}</select></label>
+    <label>牌桌位置示意<select aria-label="手記桌型" value={maxSeats} onChange={e=>{setMax(e.target.value);setIssue('')}}><option value="">按已寫位置排列</option><option value="6">6-max</option><option value="9">9-max</option></select></label>
+    <label>加注金額<select aria-label="加注金額解讀" value={raiseMode} onChange={e=>{setRaiseMode(e.target.value);setIssue('')}}><option value="to">加注至總額（預設）</option><option value="increment">本次額外投入</option></select></label>
+   </div>
+   <div className="notes-examples"><button onClick={()=>{setText(quickExample);setIssue('')}}>簡短範例（虛構）</button><button onClick={()=>{setText(markedExample);setIssue('')}}>3-way 全押範例（虛構）</button></div>
+   <p className="hint">支援 c / x / f / r / b / jam、k 金額、直接寫 277r 再換行記 Turn／River。第一次寫 Hero SB 或 Hero BTN，之後用 Hero 就得。未識嘅寫法會提示嗰一段；目前係本機縮寫轉換，唔係通用 AI。</p>
+  </details>
+ </Modal>
 }

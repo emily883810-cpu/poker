@@ -102,13 +102,13 @@ export function convertMarkedNotes(text,options={}){
  const flop=lines[3]?.match(/^x\s+x\s+VIP\s+(\d+(?:\.\d+)?k?)\s+hero\s+jam\s+(\d+(?:\.\d+)?k?)\s+c\s*[（(](?:夾中間戈家提前直f左|中間玩家提前fold)[）)]$/i);
  const result=lines[6]?.match(/^HJ\s+([2-9TJQKA]{2}[so]?)\s+we\s+lost$/i);
  if(!header||!pf||!flop||!result||lines.length!==7)return {hand:null,issues:['此縮寫格式尚未完整辨識。請按範例格式補寫，或用 PF/F/T/R 格式；不會猜測缺漏動作。'],derived:[]};
- const issues=[];if(!['HKD','RMB','USD','EUR','BB'].includes(options.currency))issues.push('原手記未寫幣別，請在上方選擇');if(![6,9].includes(+options.maxSeats))issues.push('原手記未寫桌型，請選 6-max 或 9-max');
+ const issues=[];if(!['HKD','RMB','USD','EUR','BB','籌碼'].includes(options.currency))issues.push('原手記未寫幣別，請在上方選擇');if(![6,9].includes(+options.maxSeats))issues.push('原手記未寫桌型，請選 6-max 或 9-max');
  const number=s=>Number(s.replace(/k$/i,''))*(/k$/i.test(s)?1000:1);
  const sb=+header[1],bb=+header[2],effective=+header[3]*bb,raise=+pf[2],jam=number(flop[2]);
  if(rounded(raise+jam)!==effective)issues.push('有效 Stack 與翻前投入 + flop jam 金額不一致，請核對');
  if(issues.length)return {hand:null,issues,derived:[]};
  const canonical=`Live ${sb}/${bb} ${options.currency} ${options.maxSeats}-max\nHero SB ${effective} ${pf[3]}\nBB ${bb}\nLJ ${raise}\nHJ ${effective} ${result[1]}\nPF: LJ r${pf[1]}, HJ c, Hero r${raise}, BB f, LJ c, HJ c\nF: ${lines[2]} | Hero x, LJ x, HJ b${number(flop[1])}, LJ f, Hero r${jam}, HJ c\nT: ${lines[4]} |\nR: ${lines[5]} |\nNotes: 手記結果 HJ ${result[1]}，Hero 輸；未記實際派彩及抽水。`;
- const parsed=convertNotes(canonical,{raiseMode:'to'});
+ const parsed=convertNotes(canonical,{raiseMode:'to',currency:options.currency,maxSeats:options.maxSeats});
  if(!parsed.hand)return parsed;
  const h=parsed.hand;h.source=text;h.title=`${pf[3].toUpperCase()} vs HJ · 3BP 3-way`;h.potType='3BP 3-way';h.reconstructed=true;
  for(const p of h.players)if(p.name!=='Hero')p.stackKnown=false;
