@@ -99,7 +99,7 @@ class Handler(BaseHTTPRequestHandler):
         path = urlparse(self.path)
         q = parse_qs(path.query).get('q', [''])[0].strip().casefold()
         if path.path == '/api/health':
-            return self.respond(200, {'status': 'ok', 'mode': 'offline-review'})
+            return self.respond(200, {'status': 'ok', 'mode': 'offline-review', 'version': '0.2.0'})
         if path.path == '/api/session':
             with connect() as con:
                 return self.respond(200, {'required': auth.required(), 'authenticated': auth.authenticated(self.headers, con)})

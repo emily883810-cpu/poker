@@ -1,7 +1,7 @@
 {
   "name": "poker-os",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
@@ -9,7 +9,9 @@
     "test": "node --test tests/*.test.js && python3 -m unittest discover -s tests -p 'test_*.py'",
     "server": "python3 -m server.app",
     "test:e2e": "playwright test",
-    "test:web": "playwright test --config playwright.web.config.js"
+    "test:web": "playwright test --config playwright.web.config.js",
+    "build:coach": "vite build --config vite.coach.config.js",
+    "test:coach": "playwright test --config playwright.coach.config.js"
   },
   "dependencies": {
     "react": "^19.2.0",

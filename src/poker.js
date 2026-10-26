@@ -1,7 +1,7 @@
 export const streets = ['Preflop','Flop','Turn','River'];
 export const money = n => Number(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 const round = n => Math.round(n*100)/100;
-const cardRE = /^[2-9TJQKA][cdhs]$/;
+const cardRE = /^[2-9TJQKA][cdhs?]$/;
 export function validateHand(h) {
   if (!h || h.completed !== true) throw Error('只接受已完成手牌，請確認 completed=true。');
   if(typeof h.id!=='string'||! /^[A-Za-z0-9_.-]{1,100}$/.test(h.id)) throw Error('Hand ID 只接受英數、點、底線、連字號（最長100字）。');
@@ -12,25 +12,32 @@ export function validateHand(h) {
   if (!Array.isArray(h.players) || h.players.length<2 || h.players.length>h.maxSeats) throw Error('座位數不正確。');
   const names = new Set(), seats = new Set(), cards=[];
   for (const p of h.players) {
-    if (!p.name || names.has(p.name) || !Number.isInteger(p.seat) || p.seat<1 || p.seat>h.maxSeats || seats.has(p.seat) || !Number.isFinite(p.stack) || p.stack<=0) throw Error('玩家名稱、座號不可重複，Stack 必須大於 0。');
+    if (typeof p.name!=='string'||!p.name||p.name.length>100||names.has(p.name) || !Number.isInteger(p.seat) || p.seat<1 || p.seat>h.maxSeats || seats.has(p.seat) || !Number.isFinite(p.stack) || p.stack<=0) throw Error('玩家名稱、座號不可重複，Stack 必須大於 0。');
+    if(p.position!==undefined&&typeof p.position!=='string') throw Error('Position 必須為文字。');
+    if(p.cardsNote!==undefined&&typeof p.cardsNote!=='string') throw Error('底牌說明必須為文字。');
+    if(p.stackKnown!==undefined&&typeof p.stackKnown!=='boolean') throw Error('Stack 已知狀態格式不正確。');
     names.add(p.name); seats.add(p.seat);
     if (p.cards && (!Array.isArray(p.cards)||![0,2].includes(p.cards.length))) throw Error('已知底牌必須為兩張。');
     cards.push(...(p.cards||[]));
   }
   if (!Array.isArray(h.board)||![0,3,4,5].includes(h.board.length)) throw Error('公共牌必須為 0、3、4 或 5 張。');
   cards.push(...h.board);
-  if(cards.some(c=>!cardRE.test(c)) || new Set(cards).size!==cards.length) throw Error('牌面格式錯誤或有重複牌（例如 As、Th）。');
+  if(cards.some(c=>typeof c!=='string'||!cardRE.test(c)) || new Set(cards.filter(c=>c[1]!=='?')).size!==cards.filter(c=>c[1]!=='?').length || [...new Set(cards.map(c=>c[0]))].some(r=>cards.filter(c=>c[0]===r).length>4)) throw Error('牌面格式錯誤或有重複牌（例如 As、Th）。');
+  if(h.boardNote!==undefined&&typeof h.boardNote!=='string') throw Error('牌面說明必須為文字。');
+  if(h.potType!==undefined&&typeof h.potType!=='string') throw Error('底池類型必須為文字。');
+  if(h.reviewWarnings!==undefined&&(!Array.isArray(h.reviewWarnings)||h.reviewWarnings.length>30||h.reviewWarnings.some(x=>typeof x!=='string'))) throw Error('重建說明格式不正確。');
   if(!Array.isArray(h.actions)||(!h.actions.length||h.actions.length>1000)) throw Error('動作數必須在 1–1000 之間。');
   let st=0;
   for(const a of h.actions){
     const idx=streets.indexOf(a.street);
     if(idx<st || idx<0 || (idx>0 && h.board.length<idx+2)) throw Error('動作街序或公共牌不完整。');
     st=idx;
-    if(!names.has(a.player)||!['post','bet','call','raise','check','fold','return','collect'].includes(a.type)) throw Error('不支援的玩家或動作。');
+    if((a.type!=='deal'&&!names.has(a.player))||!['post','bet','call','raise','check','fold','return','collect','deal'].includes(a.type)) throw Error('不支援的玩家或動作。');
+    if(a.note!==undefined&&typeof a.note!=='string') throw Error('動作說明必須為文字。');
     if(!Number.isFinite(a.amount)||a.amount<0) throw Error('下注金額必須為非負數。');
-    if(['check','fold'].includes(a.type)&&a.amount!==0) throw Error('Check/Fold 金額應為 0。');
+    if(['check','fold','deal'].includes(a.type)&&a.amount!==0) throw Error('Check/Fold 金額應為 0。');
   }
-  if(!h.actions.some(a=>a.type==='collect')) throw Error('完成手牌必須記錄 collect 派彩（含分池）。');
+  if(!h.actions.some(a=>a.type==='collect')&&h.settlement!=='unrecorded') throw Error('完成手牌必須記錄 collect 派彩（含分池）。');
   replay(h,h.actions.length,true);
   return h;
 }
@@ -40,6 +47,7 @@ export function replay(h,step,strict=false){
   let pot=0, street='Preflop', paid=0;
   for(const a of h.actions.slice(0,step)){
     if(a.street!==street){players.forEach(p=>{p.streetPut=0;p.last='';});street=a.street;}
+    if(a.type==='deal')continue;
     const p=players.find(p=>p.name===a.player);
     if(!p) throw Error('Unknown player');
     p.last=a.type;
@@ -55,14 +63,16 @@ export function replay(h,step,strict=false){
     }else if(a.type==='fold')p.folded=true;
   }
   const active=players.filter(p=>!p.folded).map(p=>p.remaining).sort((a,b)=>b-a);
-  const effective=active.length>1?active[1]:0;
+  let effective=active.length>1?active[1]:0;
+  const live=players.filter(p=>!p.folded);let effectiveKnown=live.every(p=>p.stackKnown!==false);
+  if(live.length===2&&!effectiveKnown){const exact=live.find(p=>p.stackKnown!==false),other=live.find(p=>p.stackKnown===false);if(exact&&other&&exact.remaining<=other.remaining){effectiveKnown=true;effective=exact.remaining;}}
   const levels=[...new Set(players.map(p=>p.invested).filter(x=>x>0))].sort((a,b)=>a-b);
   let prev=0;
   const layers=levels.map(level=>{const eligible=players.filter(p=>p.invested>=level);const amount=round((level-prev)*eligible.length);prev=level;return {amount,eligible:eligible.filter(p=>!p.folded).map(p=>p.name)};});
   const pots=[];
   for(const layer of layers){const last=pots.at(-1);if(last&&last.eligible.join('\0')===layer.eligible.join('\0'))last.amount=round(last.amount+layer.amount);else pots.push(layer);}
   const n=streets.indexOf(street);
-  return {players,pot,street,effective,spr:pot>0&&active.length>1?effective/pot:null,board:h.board.slice(0,n===0?0:n+2),pots,paid};
+  return {players,pot,street,effective,effectiveKnown,spr:effectiveKnown&&pot>0&&active.length>1?effective/pot:null,board:h.board.slice(0,n===0?0:n+2),pots,paid};
 }
 
 export function parseHistory(text){
@@ -92,7 +102,7 @@ function parseTextHand(text){
     if(line.startsWith('*** SUMMARY')){summary=true;continue;}
     if(summary)continue;
     const marker=line.match(/^\*\*\* (FLOP|TURN|RIVER) \*\*\* (.+)/);
-    if(marker){street={FLOP:'Flop',TURN:'Turn',RIVER:'River'}[marker[1]];board=[...marker[2].matchAll(/\[([^\]]+)\]/g)].flatMap(m=>m[1].split(/\s+/));puts={};continue;}
+    if(marker){street={FLOP:'Flop',TURN:'Turn',RIVER:'River'}[marker[1]];board=[...marker[2].matchAll(/\[([^\]]+)\]/g)].flatMap(m=>m[1].split(/\s+/));puts={};actions.push({street,player:'',type:'deal',amount:0});continue;}
     const dealt=line.match(/^Dealt to (.+) \[([^\]]+)\]/);if(dealt){const p=players.find(p=>p.name===dealt[1]);if(p)p.cards=dealt[2].split(' ');continue;}
     const ret=line.match(/^Uncalled bet \(([^)]+)\) returned to (.+)$/);
     if(ret){actions.push({street,player:ret[2],type:'return',amount:num(ret[1])});puts[ret[2]]=(puts[ret[2]]||0)-num(ret[1]);continue;}

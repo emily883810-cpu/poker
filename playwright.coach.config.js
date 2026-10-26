@@ -1,0 +1,2 @@
+import {defineConfig} from '@playwright/test';
+export default defineConfig({testDir:'tests/coach-e2e',workers:1,use:{baseURL:'http://127.0.0.1:8030',viewport:{width:390,height:844},isMobile:true,hasTouch:true,launchOptions:process.env.POKER_CHROMIUM?{executablePath:process.env.POKER_CHROMIUM}:{}},webServer:{command:'python3 -m http.server 8030 --bind 127.0.0.1 --directory coach-dist',url:'http://127.0.0.1:8030',reuseExistingServer:false},reporter:'list',outputDir:'/tmp/poker-os-coach-test-results'});

@@ -60,7 +60,7 @@ function Invoke-SetupCommand([string] $Program, [string[]] $Parameters) {
 $ApiProcess = $null
 $Stage = 'startup'
 try {
-    Write-Host 'POKER / OS - Windows launcher v0.1.1' -ForegroundColor Green
+    Write-Host 'POKER / OS - Windows launcher v0.2.0' -ForegroundColor Green
     Write-Host 'Checking Python. First setup needs an Internet connection.'
     if (-not (Test-Path -LiteralPath (Join-Path $Root 'dist\index.html')) -or -not (Test-Path -LiteralPath $Bootstrap)) {
         throw 'Files missing. Extract the entire ZIP first, then run Start-Poker-OS.cmd from the extracted folder.'
@@ -96,7 +96,10 @@ try {
     $Url = 'http://127.0.0.1:8765'
     $Existing = $null
     try { $Existing = Invoke-RestMethod -Uri ($Url + '/api/health') -TimeoutSec 2 } catch { }
-    if ($Existing -and $Existing.mode -eq 'offline-review') {
+    if ($Existing -and $Existing.mode -eq 'offline-review' -and $Existing.version -ne '0.2.0') {
+        throw 'An older Poker OS is still running. Close its black window first, then start v0.2.0 again.'
+    }
+    if ($Existing -and $Existing.mode -eq 'offline-review' -and $Existing.version -eq '0.2.0') {
         Write-Host 'Poker OS is already running. Opening your browser...'
         Start-Process $Url
         exit 0

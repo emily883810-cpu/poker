@@ -2,6 +2,10 @@
 
 私人 Texas Hold’em Cash Game 離線復盤工作台。React + Vite 前端、Python API、SQLite 保存。支援 Windows 本機模式及有私人登入的手機網頁部署，詳細見 [iPhone／網頁部署說明](DEPLOY.md)。專為已完成手牌；沒有客戶端監聽、HUD、即時建議、自動打牌、外部 AI 呼叫或 Solver。附帶手牌是自行編寫的示範，不是實際平台紀錄。
 
+## 文字手記及 Coach 手機分享
+
+新增「文字轉重播」、未知花色／Stack 下限、全押 runout，以及單手分享連結。另提供無後端的 GitHub Pages 檢視器，詳見 [文字手記及 Coach 使用說明](COACH.md)。靜態檢視頁不等同私人伺服器登入，手牌只在瀏覽器／分享連結保存。
+
 ## Windows 雙擊版
 
 已提供的 Windows ZIP 包含編譯後網頁，**不需安裝 Node.js**：

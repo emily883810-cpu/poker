@@ -36,18 +36,22 @@ def validate_hand(h):
         names.add(name)
         seats.add(seat)
         balances[name], invested[name] = p['stack'], 0
-    require(all(isinstance(c, str) and re.fullmatch('[2-9TJQKA][cdhs]', c) for c in cards), '牌面錯誤')
-    require(len(set(cards)) == len(cards), '有重複牌')
+    require(all(isinstance(c, str) and re.fullmatch('[2-9TJQKA][cdhs?]', c) for c in cards), '牌面錯誤')
+    known = [c for c in cards if c[1] != '?']
+    require(len(set(known)) == len(known) and all(sum(c[0] == rank for c in cards) <= 4 for rank in '23456789TJQKA'), '有重複牌或同點數超過四張')
     require(isinstance(actions, list) and 0 < len(actions) <= 1000, 'Actions 格式錯誤')
     street, pot, collected, folded = 0, 0, False, set()
     for a in actions:
-        require(isinstance(a, dict) and a.get('street') in STREETS and a.get('player') in names, 'Action 街或玩家錯誤')
+        require(isinstance(a, dict) and a.get('street') in STREETS and (a.get('type') == 'deal' or a.get('player') in names), 'Action 街或玩家錯誤')
         idx = STREETS.index(a['street'])
         require(idx >= street and (idx == 0 or len(board) >= idx + 2), '街序或公共牌不完整')
         if idx != street:
             invested = dict.fromkeys(names, 0)
         street = idx
-        kind, name, amount = a.get('type'), a['player'], a.get('amount')
+        kind, name, amount = a.get('type'), a.get('player'), a.get('amount')
+        if kind == 'deal':
+            require(amount == 0, '發牌事件金額應為 0')
+            continue
         require(kind in ('post', 'bet', 'call', 'raise', 'return', 'collect', 'fold', 'check') and number(amount), '動作或金額錯誤')
         if kind in ('post', 'bet', 'call', 'raise'):
             require(name not in folded and amount <= balances[name] + 0.001, '下注超過 Stack 或已棄牌')
@@ -68,7 +72,7 @@ def validate_hand(h):
             require(amount == 0, 'Check/Fold 金額應為 0')
             if kind == 'fold':
                 folded.add(name)
-    require(collected, '必須記錄 collect 派彩')
+    require(collected or h.get('settlement') == 'unrecorded', '必須記錄 collect 派彩或明確標記未記派彩')
     require(isinstance(h.get('tags'), list) and all(isinstance(t, str) and len(t) <= 100 for t in h['tags']), 'Tags 格式錯誤')
     require(isinstance(h.get('notes', ''), str), 'Notes 格式錯誤')
     return h

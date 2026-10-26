@@ -8,18 +8,20 @@ TOP_LEVEL = [
     '.gitignore', 'README.md', 'Start-Poker-OS.cmd', 'start-windows.ps1',
     'windows_bootstrap.py', 'requirements.txt', 'package.json', 'package-lock.json',
     'index.html', 'vite.config.js', 'playwright.config.js', 'playwright.web.config.js',
-    'DEPLOY.md', 'Dockerfile', '.dockerignore', 'render.yaml',
+    'DEPLOY.md', 'COACH.md', 'Dockerfile', '.dockerignore', 'render.yaml',
+    'vite.coach.config.js', 'playwright.coach.config.js',
 ]
 FOLDERS = ['dist', 'server', 'src', 'tests', 'examples', 'public', 'scripts']
-GUIDE = '''Poker OS v0.1.1 - Windows 開啟方法
+GUIDE = '''Poker OS v0.2.0 - Windows 開啟方法
 
 1. 右鍵按下載的 ZIP，選「全部解壓縮」。
 2. 開啟解壓後的 Poker-OS 資料夾。
-3. 雙擊 Start-Poker-OS.cmd（顯示為 Start-Poker-OS 也可以）。
+3. 更新前先關閉舊版的黑色視窗，再雙擊 Start-Poker-OS.cmd（顯示為 Start-Poker-OS 也可以）。
 4. 第一次會檢查及安裝 Python 和 PDF 套件，等候幾分鐘。
 5. 瀏覽器會自動開啟。使用時保留黑色視窗。
 
-v0.1.1 修正 Windows PowerShell 傳遞 Python 指令時的引號問題。
+v0.2.0 新增文字手記轉重播、未知花色、Stack 下限及 Coach 分享。
+已包含 Windows PowerShell 引號問題修正。
 不用打指令，不用 Node.js，不用登入。
 如未能開啟，保留黑色視窗的錯誤訊息再求助；不要停用防毒保護。
 資料保存在 data 資料夾，請自行備份。
@@ -50,7 +52,7 @@ def main():
         assert not any(name.startswith('/') or '..' in name.split('/') for name in names)
     digest = hashlib.sha256(output.read_bytes()).hexdigest()
     (dest / 'SHA256SUMS.txt').write_text(digest + '  Poker-OS-Windows.zip\n')
-    print(f'Windows v0.1.1: {len(names)} files, {output.stat().st_size} bytes; integrity and private-file exclusion checks passed.')
+    print(f'Windows v0.2.0: {len(names)} files, {output.stat().st_size} bytes; integrity and private-file exclusion checks passed.')
     print('SHA-256:', digest)
 
 
